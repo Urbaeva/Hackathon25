@@ -48,9 +48,9 @@ class ApiController extends Controller
 
         $query = DB::table('courses');
 
-        if ($request->has('grade_system')) {
+        if ($request->has('original_grade')) {
             $query->where('has_gpa_requirement', true)
-                ->where('grade_system', $request->get('grade_system'));
+                ->where('original_grade', $request->get('original_grade'));
         }
 
         if ($request->has('gre_score_required')) {

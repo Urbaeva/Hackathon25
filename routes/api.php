@@ -14,10 +14,7 @@ Route::get('/user', function (Request $request) {
 Route::get('/get-data', [ApiController::class, 'getFilteredData'])->name('getFilteredData');
 Route::get('/filter-data', [ApiController::class, 'filterFromDB'])->name('filterFromDB');
 
-//Route::post('/chat', [ChatBotController::class, 'chat']);
-Route::post('/chat', function () {
-    return response()->json(['response' => 'How can I help you?']);
-});
+Route::post('/chat', [ChatBotController::class, 'chat']);
 
 
 Route::post('/register', [AuthController::class, 'register']);

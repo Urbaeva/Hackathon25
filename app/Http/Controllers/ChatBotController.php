@@ -60,11 +60,11 @@ class ChatBotController extends Controller
             $response = $result->choices[0]->message->content;
 
             // Сохраняем историю чата
-            ChatHistory::create([
-                'user_message' => $request->message,
-                'bot_response' => $response,
-                'user_id' => auth()->id(),
-            ]);
+//            ChatHistory::create([
+//                'user_message' => $request->message,
+//                'bot_response' => $response,
+//                'user_id' => auth()->id(),
+//            ]);
 
             return response()->json([
                 'success' => true,
