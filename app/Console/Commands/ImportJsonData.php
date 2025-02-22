@@ -12,95 +12,51 @@ class ImportJsonData extends Command
 
     public function handle()
     {
-        $path = storage_path('app/public/programmes.json');
+        $path = public_path('formatted_data.json');
         if (!file_exists($path)) {
             $this->error('Файл не найден!');
             return;
         }
 
         $json = file_get_contents($path);
-        $data = json_decode($json, true);
+        $programmes = json_decode($json, true);
 
-        if (!$data) {
+        if (!$programmes) {
             $this->error('Ошибка в JSON-файле!');
             return;
         }
 
-        foreach ($data as $item) {
-            // Проверка и вставка языка
-            $languageID = null;
-            if (!empty($item['analyzed'])) {
-                $languageName = implode(', ', $item['languages']); // API отдает массив, преобразуем в строку
-                $languageID = DB::table('languages')->where('name', $languageName)->value('id');
-                if (!$languageID) {
-                    $languageID = DB::table('languages')->insertGetId(['name' => $languageName]);
-                }
-            }
 
-            $typeOfInstitutionID = null;
-            if (!empty($item['type_of_institution'])) {
-                $typeOfInstitutionID = DB::table('type_of_institutions')->where('name', $item['type_of_institution'])->value('id');
-                if (!$typeOfInstitutionID) {
-                    $typeOfInstitutionID = DB::table('type_of_institutions')->insertGetId(['name' => $item['type_of_institution']]);
-                }
-            }
+        foreach ($programmes as $programme) {
+            DB::table('courses')->insert([
+                'course_id_from_site' => $programme['id'],
 
-            $cityID = null;
-            if (!empty($item['city'])) {
-                $cityID = DB::table('cities')->where('name', $item['city'])->value('id');
-                if (!$cityID) {
-                    $cityID = DB::table('cities')->insertGetId(['name' => $item['city']]);
-                }
-            }
+                // GPA
+                'has_gpa_requirement' => $programme['gpa']['has_grade_requirement'],
+                'original_grade' => $programme['gpa']['original_grade'],
+                'grade_system' => $programme['gpa']['grade_system'],
+                'qualitative_grade' => $programme['gpa']['qualitative_grade'],
 
-            $departmentID = null;
-            if (!empty($item['name'])) {
-                $departmentID = DB::table('departments')->where('name', $item['name'])->value('id');
-                if (!$departmentID) {
-                    $departmentID = DB::table('departments')->insertGetId(['name' => $item['name']]);
-                }
-            }
+                // GRE
+                'is_gre_required' => $programme['gre']['is_gre_required'],
+                'gre_score_required' => $programme['gre']['gre_score_required'],
+                'is_gre_optional' => $programme['gre']['is_gre_optional'],
 
-            $locationID = null;
-            if (!empty($item['location'])) {
-                $locationID = DB::table('locations')->where('name', $item['location'])->value('id');
-                if (!$locationID) {
-                    $locationID = DB::table('locations')->insertGetId(['name' => $item['location']]);
-                }
-            }
+                // Дедлайны
+                'winter_deadline' => $programme['deadlines']['winter'] ?? null,
+                'summer_deadline' => $programme['deadlines']['summer'] ?? null,
+                'additional_deadlines' => json_encode($programme['deadlines']['additional_info']),
 
-            $modeOfStudyID = null;
-            if (!empty($item['mode_of_study'])) {
-                $modeOfStudyID = DB::table('mode_of_study')->where('name', $item['mode_of_study'])->value('id');
-                if (!$modeOfStudyID) {
-                    $modeOfStudyID = DB::table('mode_of_study')->insertGetId(['name' => $item['mode_of_study']]);
-                }
-            }
+                // Языковые требования
+                'ielts' => $programme['language']['ielts'],
+                'toefl_ibt' => $programme['language']['toefl_ibt'],
+                'toefl_pbt' => $programme['language']['toefl_pbt'],
+                'cefr' => $programme['language']['cefr'],
 
-            if (!empty($item['institution'])) {
-                DB::table('institution')->updateOrInsert(
-                    ['name' => $item['institution'], 'type_of_institution_id' => $typeOfInstitutionID, 'city_id' => $cityID],
-                    ['name' => $item['institution']]
-                );
-            }
-            // Вставка данных в таблицу programmes
-            DB::table('programmes')->updateOrInsert(
-                ['title' => $item['title'], 'short_title' => $item['short_title'], 'department_id' => $departmentID],
-                [
-                    'description' => $item['description'],
-//                    'fields_of_study_id' => $typeOfStudyID,
-                    'language_id' => $languageID,
-                    'mode_of_study_id' => $modeOfStudyID,
-                    'duration' => $item['duration'],
-                    'tuition_fee' => $item['tuition_fee'],
-                    'start_date' => $item['start_date'],
-                    'application_deadline' => $item['application_deadline'],
-                    'location_id' => $locationID,
-                    'combined_degree' => $item['combined_degree'],
-                    'joint_degree' => $item['joint_degree'],
-                    'institution_page_link' => $item['institution_page_link'],
-                ]
-            );
+                // Информация о программах
+                'is_joint_degree' => $programme['is_joint_degree'],
+                'is_combined_degree' => $programme['is_combined_degree'],
+            ]);
         }
 
         $this->info('Импорт завершен!');

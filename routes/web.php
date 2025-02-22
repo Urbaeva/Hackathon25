@@ -10,7 +10,7 @@ Route::get('/', function () {
 
 Route::get('/index', [IndexController::class, 'index'])->name('index');
 Route::get('/meeting', [IndexController::class, 'meeting'])->name('meeting');
-Route::get('/get-data', [ApiController::class, 'getData'])->name('getData');
+
 
 
 Route::get('/cities/{id}', [IndexController::class, 'getCities'])->name('cities');

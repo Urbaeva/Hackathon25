@@ -8,6 +8,69 @@ use Illuminate\Support\Facades\Http;
 
 class ApiController extends Controller
 {
+
+    public function getFilteredData(Request $request)
+    {
+        // Получаем курсы из базы с учетом фильтров
+        $query = DB::table('courses');
+
+        $filters = [
+            'gpa' => '>=',
+            'toefl' => '>=',
+            'ielts' => '>=',
+            'gre' => '=',
+            'gmat' => '=',
+            'combined_degree' => '=',
+            'join_degree' => '=',
+            'deadline' => '<=',
+        ];
+
+        foreach ($filters as $param => $operator) {
+            if ($request->has($param)) {
+                $query->where($param, $operator, $request->get($param));
+            }
+        }
+
+        $likeFilters = ['language_level', 'type_of_appliance', 'academic_standardized_tests', 'institution_link'];
+
+        foreach ($likeFilters as $param) {
+            if ($request->has($param)) {
+                $query->where($param, 'LIKE', '%' . $request->get($param) . '%');
+            }
+        }
+
+        $dbCourses = $query->pluck('course_id_from_site')->toArray();
+
+        // Запрос к API DAAD
+        $url = 'https://www2.daad.de/deutschland/studienangebote/international-programmes/api/solr/en/search.json';
+
+        $params = $request->only([
+            'cert', 'admReq', 'langExamPC', 'scholarshipLC', 'langExamLC', 'scholarshipSC', 'langExamSC', 'degree', 'fos',
+            'langDeAvailable', 'langEnAvailable', 'ins', 'fee', 'sort', 'dur', 'q', 'display', 'isElearning', 'isSep'
+        ]);
+
+        $params['degree[]'] = 2;
+        $params['limit'] = $request->get('limit', 10);
+        $params['offset'] = $request->get('offset', 0);
+
+        $response = Http::get($url, $params);
+
+        if (!$response->successful()) {
+            return response()->json(['error' => 'Unable to fetch data from API'], 500);
+        }
+
+        $data = $response->json();
+        $apiCourses = $data['courses'] ?? [];
+
+        // Фильтруем курсы, которые есть в базе
+        $matchedCourses = array_values(array_filter($apiCourses, fn($course) => in_array($course['id'], $dbCourses)));
+
+        return response()->json([
+            'courses_count' => count($matchedCourses),
+            'courses' => $matchedCourses,
+        ]);
+    }
+
     public function getData(Request $request)
     {
         $url = 'https://www2.daad.de/deutschland/studienangebote/international-programmes/api/solr/en/search.json';

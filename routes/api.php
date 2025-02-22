@@ -1,7 +1,8 @@
 <?php
 
+use App\Http\Controllers\ApiController;
 use App\Http\Controllers\ChatBotController;
-use App\Http\Controllers\IndexController;
+use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -10,8 +11,21 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 
+Route::get('/get-filtered-data', [ApiController::class, 'getFilteredData'])->name('getFilteredData');
+Route::get('/filter-data', [ApiController::class, 'filterFromDB'])->name('filterFromDB');
 
-//Route::post('/chat', [ChatBotController::class, 'chat'])->middleware('auth');
 Route::post('/chat', [ChatBotController::class, 'chat']);
+
+
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('test', function () { return 'test';});
+});
+
+
+
 
 
