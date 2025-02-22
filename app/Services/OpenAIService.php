@@ -31,14 +31,12 @@ class OpenAIService
             'json' => [
                 'model' => 'gpt-3.5-turbo',
                 'messages' => [
-
                     ['role' => 'system', 'content' => $systemPrompt],
                     ['role' => 'user', 'content' => $message],
                 ],
             ],
         ]);
 
-        $responseData = json_decode($response->getBody(), true);
-        return json_decode($responseData['choices'][0]['message']['content'], true);
+        return json_decode($response->getBody(), true);
     }
 }

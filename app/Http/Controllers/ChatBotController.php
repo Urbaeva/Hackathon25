@@ -5,9 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\OpenAIService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use OpenAI\Laravel\Facades\OpenAI;
-use App\Models\ChatHistory;
 
 class ChatBotController extends Controller
 {
@@ -23,7 +21,9 @@ class ChatBotController extends Controller
     {
         $message = $request->input('message');
         $response = $this->openAIService->chat($message);
-        return response()->json($response);
+        $assistantResponse = $response['choices'][0]['message']['content'] ?? 'Ошибка получения ответа';
+
+        return response()->json(['response' => $assistantResponse]);
     }
 
 
